@@ -1,7 +1,7 @@
 <?php
 
-$mac = '111';                   //MAC地址
-$topic = "{$mac}/exec/shell";   //订阅topic
+$mac = '006688000000';                   //MAC地址
+$topic = "{$mac}/exec/cmd";   //订阅topic
 
 $client = new Mosquitto\Client();
 
@@ -22,7 +22,7 @@ $message = $client->onMessage(function($message){
     $client->connect("localhost", 1883, 5);
     $msg_json = array('mac'=>'111', 'result'=>'result_content | '.$script, 'id'=>$id);
     $msg_json = json_encode($msg_json);
-    $client->publish('111/exec/shell/result', $msg_json, 1, 0);
+    $client->publish('111/exec/cmd/result', $msg_json, 1, 0);
 });
 
 //链接
