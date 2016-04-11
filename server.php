@@ -2,9 +2,8 @@
 $mac        = $argv[1];                         //MAC地址
 $script     = $argv[2];                         //Message
 $id         = $argv[3];                         //ID
-//$id             = time() . rand(0001, 9999);
 $pub_topic  = "{$mac}/exec/cmd";                //订阅topic
-$sub_topic  = "{$mac}/exec/result/{$id}";             //订阅topic
+$sub_topic  = "{$mac}/exec/result/{$id}";       //订阅topic
 $msg_array      = array(
     'id'        => $id,
     'type'      => 'script',
@@ -28,6 +27,11 @@ $client->onMessage(function($message){
     $redis = new Redis();
     $redis->connect('localhost', '6379');
     $redis->set($id, $data);
+
+    //断开链接
+    $client = new Mosquitto\Client();
+    $client->disconnect();
+    unset($client);
 });
 
 //链接
@@ -36,18 +40,15 @@ $client->setCredentials('php', '');
 $client->connect("cloud.big.openfin.com", 1883, 5);
 
 //订阅
-$client->subscribe($sub_topic, 1);
-for($i=0;$i<3;$i++)
+$client->subscribe($sub_topic, 2);
+//$client->loop();
+//$client->publish($pub_topic, $msg_json, 1, 0);
+
+for($i=0; $i<3; $i++)
 {
     $client->loop();
-    $client->publish($pub_topic, $msg_json, 1, 0);
+    $client->publish($pub_topic, $msg_json, 2, 0);
     $client->loop();
     sleep(1);
 }
 
-//断开链接
-$client->disconnect();
-unset($client);
-   // $redis = new Redis();
-   // $redis->connect('localhost', '6379');
-   // echo $redis->get($id);
