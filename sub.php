@@ -1,39 +1,15 @@
 <?php
-class MyClient extends Mosquitto\Client {
-	protected $pendingSubs = [];
-	protected $grantedSubs = [];
-	protected $subscribeCallback = null;
-	public function __construct($id = null, $cleanSession = false) {
-		parent::__construct($id, $cleanSession);
-		parent::onSubscribe(array($this, 'subscribeHandler'));
-	}
-	public function subscribeHandler($mid, $qosCount, $grantedQos) {
-		if (!isset($this->pendingSubs[$mid])) {
-			return;
-		}
-		$topic = $this->pendingSubs[$mid];
-		$this->grantedSubs[$topic] = $grantedQos;
-		echo "Subscribed to topic {$topic} with message ID {$mid}\n";
-		if (is_callable($this->subscribeCallback)) {
-			$this->subscribeCallback($mid, $qosCount, $grantedQos);
-		}
-	}
-	public function subscribe($topic, $qos) {
-		$mid = parent::subscribe($topic, $qos);
-		$this->pendingSubs[$mid] = $topic;
-	}
-	public function onSubscribe(callable $callable) {
-		$this->subscribeHandler = $callable;
-	}
-	public function getSubscriptions() {
-		return $this->grantedSubs;
-	}
+$sub_topic  = "006688000000/exec/cmd";
+$client = new Mosquitto\Client();
+$client->onMessage(function($message) {
+    $payload        = $message->payload;
+    $payload        = json_decode($payload);
+    $data           = $payload->data;
+    echo $data;
+});
+$client->setCredentials('php', '');
+$client->connect("cloud.big.openfin.com", 1883, 5);
+$client->subscribe($sub_topic, 1);
+while (true) {
+	$client->loop(10);
 }
-$c = new MyClient('subscriptionTest');
-$c->onSubscribe(function() { echo "Hello, I got subscribed\n"; });
-$c->connect('localhost', 1883, 50);
-$c->subscribe('sensor', 1);
-for ($i = 0; $i < 50; $i++) {
-	$c->loop(10);
-}
-var_dump($c->getSubscriptions());

@@ -1,9 +1,10 @@
 <?php
 $mac        = $argv[1];                         //MAC地址
-$script     = $argv[2];                         //MAC地址
+$script     = $argv[2];                         //Message
+$id         = $argv[3];                         //ID
+//$id             = time() . rand(0001, 9999);
 $pub_topic  = "{$mac}/exec/cmd";                //订阅topic
-$sub_topic  = "{$mac}/exec/result";             //订阅topic
-$id             = time() . rand(0001, 9999);    //随机ID
+$sub_topic  = "{$mac}/exec/result/{$id}";             //订阅topic
 $msg_array      = array(
     'id'        => $id,
     'type'      => 'script',
@@ -16,20 +17,17 @@ $client = new Mosquitto\Client();
 //回调函数, 接受订阅消息
 $client->onMessage(function($message){
     //获取服务器发送来的变量值
-    $payload = $message->payload;
-    $payload = json_decode($payload);
-
-   // $id      = $message->id;
-    $data  = $payload->data;
-    echo $data;
-
-    //打印提示
-    // printf('Got a subscrib result id  '.$id.' | ');
-
+    $payload        = $message->payload;
+    $payload        = json_decode($payload);
+    $topic          = $message->topic;
+    $topic_array    = explode('/', $topic);
+    $id             = $topic_array[3];
+    $data           = $payload->data;
+    
     //存储数据
-    // $redis = new Redis();
-    // $redis->connect('localhost', '6379');
-    // $redis->set($id, $data);
+    $redis = new Redis();
+    $redis->connect('localhost', '6379');
+    $redis->set($id, $data);
 });
 
 //链接
@@ -50,4 +48,6 @@ for($i=0;$i<3;$i++)
 //断开链接
 $client->disconnect();
 unset($client);
-
+   // $redis = new Redis();
+   // $redis->connect('localhost', '6379');
+   // echo $redis->get($id);
